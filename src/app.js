@@ -15,6 +15,8 @@ app.use(urlencoded({extended:true,limit:'16kb'}))
 app.use(express.static("public"))
 app.use(cookieParser())
 
+
+
 //import user route
 import userroute from './routes/user.routes.js'
 //we use app . use cause its calling middleware!!!
