@@ -26,6 +26,7 @@ const refreshTokenAndAccessToken = async (userId) =>{
 
 }
 
+
 const registerUser = asyncHandler(async (req, res) => {
     //get user detials from frontend || postman
     //validation if empty?
@@ -148,11 +149,32 @@ const loginUser = asyncHandler(async(req,res)=>{
 const logoutUser = asyncHandler(async(req,res)=>{
     //refresh accesstoken lenge , we will clear cookie
     //database se refresh token lelenge
-    User.findById()
+    await User.findByIdAndUpdate(
+        req.user._id,
+        {
+            $set:{refreshToken:undefined}
+        },{
+            new :true
+        }
+
+    )
+
+    const options = {
+        httpOnly: true,
+        secure:true
+
+    }
+
+    return res
+    .status(200)
+    .clearCookie("accessToken",options)
+    .clearCookie("refreshToken",options)
+    .json(new APIresponse(200,{},"User logged out"))
 })
 
 
 export {
     registerUser,
-    loginUser
+    loginUser,
+    logoutUser
 }
