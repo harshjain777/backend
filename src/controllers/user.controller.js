@@ -9,18 +9,23 @@ const refreshTokenAndAccessToken = async (userId) =>{
 
     try {
         const user = await User.findById(userId)
+        if (!user) {
+            throw new APIerror(404, "User not found");
+        }
         const refreshToken = user.generateRefreshToken()
         const accessToken = user.generateAccessToken()
+        console.log('Access Token:', accessToken);
+        console.log('Refresh Token:', refreshToken);
     
         user.refreshToken = refreshToken
-        await user.save({validateBeforeSave:false})
+        await user.save( { validateBeforeSave : false } )
 
-        return {refreshToken,accessToken}
+        return {accessToken,refreshToken}
 
 
     } catch (error) {
-
-        throw new APIerror(500,"something went wrong while crreating refesh token and access token!")
+        console.error("Error details:", error);
+        throw new APIerror(500,"something went wrong while creating refesh token and access token!")
         
     }
 
@@ -41,35 +46,37 @@ const registerUser = asyncHandler(async (req, res) => {
     const {fullName,email,username,password} = req.body
     console.log(email,"email")
 
-    if([fullName,email,username,password].some((field)=>field?.trim()==='')){
-        throw new APIerror(400,"All field is required")
+    console.log("Incoming request body:");
+    console.log("Full Name:", fullName);
+    console.log("Email:", email);
+    console.log("Username:", username);
+    console.log("Password:", password ? "Provided" : "Not Provided");
+
+    if ([fullName, email, username, password].some(field =>  field?.trim() === '')) {
+        throw new APIerror(400, "All fields are required");
     }
+    
 
-    const existedUser = User.findOne({
-        $or:[{username},{email}]
-    })
+    
 
-    if(existedUser){
+    if(!(username||email)){
         throw new APIerror(409,"user with email or username is existed!")
     }
 
     const avtarLocalPath = req.field?.avatar[0]?.path
     const coverImageLocal = req.field?.coverImage[0]?.path
 
-    if(!avtarLocalPath){
-        throw new APIerror(400,"upload your avatar");
-    }
 
-    const avatar = await uploadOnCloudinary(avtarLocalPath)
+    
+
+    const avtar = await uploadOnCloudinary(avtarLocalPath)
     const coverImage = await uploadOnCloudinary(coverImageLocal)
 
-    if(!avatar){
-        throw new APIerror(400,"upload your avatar");
-    }
+    
 
     const user = await User.create({
         fullName,
-        avatar:avatar.url,
+        avtar:avtar?.url || "",
         coverImage:coverImage?.url || "",
         email,
         password,
@@ -100,7 +107,7 @@ const loginUser = asyncHandler(async(req,res)=>{
 
     const {email,username,password} = req.body;
 
-    if(!email||!username){
+    if(!(email||username)){
         throw new APIerror(400,"email or username is required");
     }
 
@@ -116,11 +123,16 @@ const loginUser = asyncHandler(async(req,res)=>{
         throw new APIerror(401,"invalid user credentials!");
     }
 
-    const {refreshToken, accessToken} = await refreshTokenAndAccessToken(existingUser._id)
+    const {accessToken, refreshToken} = await refreshTokenAndAccessToken(existingUser._id)
+console.log("Access Token:", accessToken);
+console.log("Refresh Token:", refreshToken);
+
 
     const loggedInUser = await User.findById(existingUser._id).select("-password -refreshToken")
 
-
+    console.log("access token is",accessToken)
+    console.log(refreshToken)
+    
 
     const options = {
         httpOnly: true,

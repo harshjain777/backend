@@ -27,7 +27,6 @@ const userSchema = new Schema({
     },
     avatar: {
         type: String, // cloudinary url
-        required: true,
     },
     coverImage: {
         type: String, // cloudinary url
@@ -63,7 +62,7 @@ userSchema.methods.isPasswordCorrect = async function (password) {
 }
 
 
-userSchema.method.generateAccessToken=function(){
+userSchema.methods.generateAccessToken=function(){
     jwt.sign(
     {
         _id:this._id,
@@ -73,22 +72,27 @@ userSchema.method.generateAccessToken=function(){
     },
     process.env.ACCESS_TOKEN_SECRET,
     {
-        expiresIn:ACCESS_TOKEN_EXPIRY
+        expiresIn: process.env.ACCESS_TOKEN_EXPIRY || '1d'
     }
 )
 }
 
-userSchema.method.generateRefreshToken=function(){
+userSchema.methods.generateRefreshToken=function(){
     jwt.sign(
     {
         _id:this._id,
     },
     process.env.REFRESH_TOKEN_SECRET,
     {
-        expiresIn:REFRESH_TOKEN_EXPIRY
+        expiresIn: process.env.REFRESH_TOKEN_EXPIRY || '10d'
     }
 )
 }
+
+console.log("Access Token Expiry:", process.env.ACCESS_TOKEN_EXPIRY);
+console.log("Refresh Token Expiry:", process.env.REFRESH_TOKEN_EXPIRY);
+//console.log(process.env);
+
 
 
 export const User = mongoose.model("User",userSchema);
